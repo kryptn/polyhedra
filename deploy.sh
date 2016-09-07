@@ -23,8 +23,8 @@ cd out
 git checkout $TARGET_BRANCH || git checkout --orphan $TARGET_BRANCH
 cd ..
 
-# Clean out existing contents
-rm -rf out/**/* || exit 0
+# Clean out existing contents of build
+rm -rf out/build/* || exit 0
 
 # Run our compile script
 python main.py
@@ -35,7 +35,7 @@ git config user.name "Travis CI"
 git config user.email "duskdragon@gmail.com"
 
 # If there are no changes to the compiled out (e.g. this is a README update) then just bail.
-if [ -z `git diff --exit-code` ]; then
+if [[ -z `git diff --exit-code` ]]; then
     echo "No changes to the output on this push; exiting."
     exit 0
 fi
