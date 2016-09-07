@@ -1,3 +1,7 @@
+# project specific
+deploy_key
+deploy_key.pub
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
