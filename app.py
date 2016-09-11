@@ -6,7 +6,9 @@ from flask_frozen import Freezer
 
 app = Flask(__name__)
 freezer = Freezer(app)
-app.config['FREEZER_DESTINATION'] = 'out/build'
+app.config['FREEZER_DESTINATION'] = 'out'
+app.config['FREEZER_RELATIVE_URLS'] = True
+
 
 
 @app.route('/')

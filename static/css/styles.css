@@ -23,11 +23,11 @@ input, button, select
   font-size: 9px;
 }
 
-.kb-table, .kb-subtable
+.super-table
 {
-  font-size: 10px;
-  color: #e0e0e0;
-  padding: 0px;
+  width: 90%;
+  margin: auto;
+  padding: 10px;
 }
 
 .kb-table
@@ -35,6 +35,15 @@ input, button, select
   border: 1px solid #444444;
   border-collapse: separate;
   border-spacing: 1px;
+  color: #cccccc;
+}
+
+.stats-table
+{
+  border: 1px solid #444444;
+  border-collapse: separate;
+  border-spacing: 1px;
+  color: #cccccc;
 }
 
 .kb-table-title
@@ -46,7 +55,7 @@ input, button, select
 {
   height: 15px;
   background: #555555;
-  font-size: 10px;
+  font-size: 14px;
   font-weight: bold;
   padding: 4px;
 }
@@ -58,7 +67,7 @@ input, button, select
 
 .kb-table-row-odd-kill
 {
-  background: #004000;
+  background: #003000;
 }
 
 .kb-table-row-even-loss
@@ -68,20 +77,20 @@ input, button, select
 
 .kb-table-row-odd-loss
 {
-  background: #900000;
+  background: #700000;
 }
 
 .kb-table-row-even-kill:hover
 {
   color: #FFFFFF;
-  background: #0083CC;
+  background: #004E7A;
   cursor: pointer;
 }
 
 .kb-table-row-odd-kill:hover
 {
   color: #FFFFFF;
-  background: #0083CC;
+  background: #004E7A;
   cursor: pointer;
 }
 
