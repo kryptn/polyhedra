@@ -30,7 +30,10 @@ rm -rf out/build/* || exit 0
 python app.py build
 
 # Now let's go have some fun with the cloned repo
-cd out
+cd out/build
+cp -r * ..
+cd ..
+
 git config user.name "Travis CI"
 git config user.email "duskdragon@gmail.com"
 
