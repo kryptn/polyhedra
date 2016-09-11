@@ -6,8 +6,8 @@ TARGET_BRANCH="gh-pages"
 
 # Pull requests and commits to other branches shouldn't try to deploy, just build to verify
 if [ "$TRAVIS_PULL_REQUEST" != "false" -o "$TRAVIS_BRANCH" != "$SOURCE_BRANCH" ]; then
-    echo "Running main.py"
-    python main.py
+    echo "Running ~The Build~"
+    python app.py build
     exit 0
 fi
 
@@ -27,7 +27,7 @@ cd ..
 rm -rf out/build/* || exit 0
 
 # Run our compile script
-python main.py
+python app.py build
 
 # Now let's go have some fun with the cloned repo
 cd out
