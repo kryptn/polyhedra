@@ -1,17 +1,23 @@
 from sys import argv
 
 def url_list_generator():
-    f = open('config/banners.txt', 'r')
-    out_string = "\n"
-    read_line = f.readline().strip()
-    if read_line == '':
-        return
-    out_string += "            \""+read_line+"\"\n"
-    read_line = f.readline().strip()
-    while read_line != '':
-        out_string += "           , \""+read_line+"\"\n"
+    with open('config/banners.txt', 'r') as f:
+        out_string = "\n"
         read_line = f.readline().strip()
-    f.close()
+        if read_line == '':
+            return
+        out_string += "            \""+read_line+"\"\n"
+        read_line = f.readline().strip()
+        while read_line != '':
+            out_string += "           , \""+read_line+"\"\n"
+            read_line = f.readline().strip()
+        return out_string
+
+def css_importer():
+    with open('config/styles.css', 'r') as f:
+        out_string = '\n'
+        for line in f:
+            out_string += "    "+str(line.strip())+"\n"
     return out_string
 
 current_month_year = "August, 2016"
@@ -51,7 +57,7 @@ output_html = """
         return img;
       }
     </script>
-    <link type="text/css" rel="stylesheet" href="stylesheets/styles.css">
+    <style>""" + css_importer() + """</style>
     </head>
 
 <body bgcolor="black">
