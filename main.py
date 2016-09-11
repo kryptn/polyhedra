@@ -2,16 +2,17 @@ from sys import argv
 
 def url_list_generator():
     with open('config/banners.txt', 'r') as f:
+        first_line = True
         out_string = "\n"
-        read_line = f.readline().strip()
-        if read_line == '':
-            return
-        out_string += "            \""+read_line+"\"\n"
-        read_line = f.readline().strip()
-        while read_line != '':
-            out_string += "           , \""+read_line+"\"\n"
-            read_line = f.readline().strip()
-        return out_string
+        for line in f:
+            if first_line == True:
+                if line == '':
+                    return
+                out_string += "            \""+line.strip()+"\"\n"
+                first_line = False
+            else:
+                out_string += "           , \""+line.strip()+"\"\n"
+    return out_string
 
 def css_importer():
     with open('config/styles.css', 'r') as f:
