@@ -83,14 +83,14 @@ input, button, select
 .kb-table-row-even-kill:hover
 {
   color: #FFFFFF;
-  background: #0083CC;
+  background: #004E7A;
   cursor: pointer;
 }
 
 .kb-table-row-odd-kill:hover
 {
   color: #FFFFFF;
-  background: #0083CC;
+  background: #004E7A;
   cursor: pointer;
 }
 

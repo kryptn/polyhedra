@@ -39,7 +39,7 @@ killmail_table = """
 <td>
 <table class="kb-table">
     <tbody>
-        <tr>
+        <tr class="kb-table-title">
             <td>ShipType</td>
             <td>Pilot</td>
             <td>Final Blow</td>
