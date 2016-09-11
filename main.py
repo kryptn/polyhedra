@@ -51,7 +51,7 @@ output_html = """
         return img;
       }
     </script>
-    <link rel="stylesheet" href="css/styles.css">
+    <link type="text/css" rel="stylesheet" href="stylesheets/styles.css">
     </head>
 
 <body bgcolor="black">
