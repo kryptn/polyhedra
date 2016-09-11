@@ -14,14 +14,15 @@
 
       function getImageHtmlCode() {
         var dataIndex = Math.floor(Math.random() * imageUrls.length);
-        var img = '<center><img src="';        
+        var img = '<center><img src="';
         img += imageUrls[dataIndex];
         img += '" alt="Polyhedra Killboard"/></a></center>';
         return img;
       }
     </script>
+    <link rel="stylesheet" href="config/styles.css">
     </head>
-    
+
 <body bgcolor="black">
 <script type="text/javascript">
   document.write(getImageHtmlCode());
