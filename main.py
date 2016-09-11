@@ -1,5 +1,19 @@
 from sys import argv
 
+def url_list_generator():
+    f = open('config/banners.txt', 'r')
+    out_string = "\n"
+    read_line = f.readline().strip()
+    if read_line == '':
+        return
+    out_string += "            \""+read_line+"\"\n"
+    read_line = f.readline().strip()
+    while read_line != '':
+        out_string += "           , \""+read_line+"\"\n"
+        read_line = f.readline().strip()
+    f.close()
+    return out_string
+
 current_month_year = "August, 2016"
 killmail_table = """
 <font color="#cccccc">
@@ -22,31 +36,24 @@ killmail_table = """
 </font>
 """
 
-url_list = """
-            "http://i.imgur.com/7xoyXNi.png"
-           , "http://i.imgur.com/9snwgBB.png"
-           , "http://i.imgur.com/JEHCad1.png"
-           , "http://i.imgur.com/ZuywHbC.png"
-           , "http://i.imgur.com/BkqEvW4.gif"
-           , "http://i.imgur.com/I6F2msY.png"
-"""
 output_html = """
 <html>
     <head/>
     <title>Polyhedra Killboard</title>
     <script type="text/javascript">
-        var imageUrls = [""" + url_list + """];
+        var imageUrls = [""" + url_list_generator() + """];
 
       function getImageHtmlCode() {
         var dataIndex = Math.floor(Math.random() * imageUrls.length);
-        var img = '<center><img src=\"';        
+        var img = '<center><img src=\"';
         img += imageUrls[dataIndex];
         img += '\" alt=\"Polyhedra Killboard\"/></a></center>';
         return img;
       }
     </script>
+    <link rel="stylesheet" href="config/styles.css">
     </head>
-    
+
 <body bgcolor="black">
 <script type="text/javascript">
   document.write(getImageHtmlCode());
