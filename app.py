@@ -43,25 +43,23 @@ class zKillAPI():
     def update_kill_history(self):
         api_call_charID_list = ','.join(str(x) for x in self.character_list.values())
         api_call_frontstr = "http://zkillboard.com/api/character/"
-        api_call_backstr = "/afterKillID/"+str(self.most_recent_killID)+"/no-items/page/"
+        api_call_backstr = "/afterKillID/"+str(self.most_recent_killID)+"/orderDirection/asc/no-items/page/"
         api_call_minus_page_num = api_call_frontstr + api_call_charID_list + api_call_backstr
         current_page = 1
         logging.info('api call: ' +api_call_minus_page_num+str(current_page)+'/')
         raw_api_data = requests.get(api_call_minus_page_num+str(current_page)+'/').json()
-        raw_api_pages = []
-        if len(raw_api_data) != 0:
-            raw_api_pages = raw_api_data
-            #for a new round of api calls, page 1 item 1 contains the newest killID if it exists
-            self.most_recent_killID = raw_api_data[0]["killID"]
-            logging.info('zKillAPI.most_recent_killID updated to: ' + str(self.most_recent_killID))
+        raw_api_pages = raw_api_data
         while len(raw_api_data) != 0: #ensure there are no further pages
             time.sleep(10) # zkill api can be slow and tends to error out
             current_page += 1
             logging.info('api call: ' +api_call_minus_page_num+str(current_page)+'/')
             raw_api_data = requests.get(api_call_minus_page_num+str(current_page)+'/').json()
-            raw_api_pages = raw_api_pages + raw_api_data
-
-        self.history = raw_api_pages + self.history
+            raw_api_pages.extend(raw_api_data)
+        #no more pages on the api with data
+        self.history.extend(raw_api_pages)
+        #for a new round of api calls, final item contains the newest killID if it exists
+        self.most_recent_killID = self.history[-1]["killID"]
+        logging.info('zKillAPI.most_recent_killID updated to: ' + str(self.most_recent_killID))
         return current_page
 
     def write_to_file(self):
