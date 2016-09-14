@@ -29,7 +29,11 @@ rm -rf out/build/* || exit 0
 # Run our compile script
 python app.py build
 
-# Now let's go have some fun with the cloned repo
+# copy over README.md and .gitignore
+cp .gitignore out/.gitignore
+cp README.md out/README.md
+
+# Move our output from build onto our gh-pages branch root
 cd out/build
 cp -r * ..
 cd ..
@@ -37,9 +41,9 @@ cd ..
 git config user.name "Travis CI"
 git config user.email "duskdragon@gmail.com"
 
-# If there are no changes to the compiled out (e.g. this is a README update) then just bail.
+# If there are no changes to the compiled out (e.g. this is a non-website update) then just bail.
 if [[ -z `git diff --exit-code` ]]; then
-    echo "No changes to the output on this push; exiting."
+    echo "No changes to the webpage on this push; exiting."
     exit 0
 fi
 
