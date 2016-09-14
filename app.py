@@ -37,7 +37,7 @@ class zKillAPI():
         if len(self.history) == 0:
             self.most_recent_killID = (14123136-1) #first killmail minus 1 to fetch all UPDATE THIS IN FUTURE KILLBOARDS
         else:
-            self.most_recent_killID = self.history[0]["killID"]
+            self.most_recent_killID = self.history[-1]["killID"]
         logging.info('zKillAPI.most_recent_killID=' + str(self.most_recent_killID))
 
     def update_kill_history(self):
