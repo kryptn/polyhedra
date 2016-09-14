@@ -1,6 +1,7 @@
 # project specific
 deploy_key
 deploy_key.pub
+data/history.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
