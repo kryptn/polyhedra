@@ -2,6 +2,7 @@
 deploy_key
 deploy_key.pub
 data/history.json
+temp/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
