@@ -78,13 +78,8 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == 'build':
         if len(sys.argv) > 2 and sys.argv[2] == 'debug':
             logging.basicConfig(level=logging.DEBUG)
-        #highway to the dangerzone: we are running the forceall code on travisci for this commit only
-        killmails = zKillAPI()
-        while killmails.update_kill_history() != 1:
-            time.sleep(10)
-        killmails.write_to_file()
-        #end of dangerzone
         freezer.freeze()
+
     elif len(sys.argv) > 1 and sys.argv[1] == 'updatezkill':
         if len(sys.argv) > 2 and sys.argv[2] == 'debug':
             logging.basicConfig(level=logging.DEBUG)
