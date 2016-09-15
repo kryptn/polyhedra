@@ -62,6 +62,19 @@ class zKillAPI():
         logging.info('zKillAPI.most_recent_killID updated to: ' + str(self.most_recent_killID))
         return current_page
 
+    def prune_unused_history_fields(self):
+        for mail in self.history:
+            mail.pop('moonID', None) #prune moon info
+            mail['zkb'].pop('hash', None) #prune zkill hash value
+            mail['zkb'].pop('points', None) #prune points metric because it means literally nothing
+            mail['involved'] = len(mail['attackers']) # save number involved because we are pruning attackers
+            pruned_attackers = []
+            for attacker in mail['attackers']: #keep only those on character_list or finalBlow == 1
+                if attacker['finalBlow'] == 1 or attacker['characterName'] in self.character_list.keys():
+                    attacker.pop('securityStatus', None) # drop sec status
+                    pruned_attackers.append(attacker)
+            mail['attackers'] = pruned_attackers
+
     def write_to_file(self):
         with open('data/history.json', 'w') as outfile:
             json.dump(self.history, outfile)
@@ -76,19 +89,18 @@ if __name__ == "__main__":
     if len(sys.argv) > 2 and sys.argv[2] == 'debug':
         logging.basicConfig(level=logging.DEBUG)
     if len(sys.argv) > 1 and sys.argv[1] == 'build':
-        freezer.freeze()
-
-    elif len(sys.argv) > 1 and sys.argv[1] == 'updatezkill':
-        if len(sys.argv) > 3 and sys.argv[3] == 'forceall':
-            #keep going until first page is empty
-            killmails = zKillAPI()
-            while killmails.update_kill_history() != 1:
-                time.sleep(10)
-            killmails.write_to_file()
-            exit()
-
         killmails = zKillAPI()
         killmails.update_kill_history()
+        killmails.prune_unused_history_fields()
+        killmails.write_to_file()
+        freezer.freeze()
+
+    elif len(sys.argv) > 1 and sys.argv[1] == 'forcezkill':
+        #keep going until first page is empty
+        killmails = zKillAPI()
+        while killmails.update_kill_history() != 1:
+            time.sleep(10)
+        killmails.prune_unused_history_fields()
         killmails.write_to_file()
     else:
         app.run(debug=True, host='0.0.0.0')
