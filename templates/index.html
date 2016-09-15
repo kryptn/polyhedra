@@ -28,40 +28,44 @@
           <th>Pilot</th>
           <th>Final Blow</th>
           <th>Location</th>
+          <th>Involved Characters</th>
         </tr>
         <tr class="kb-table-row-date">
           <th colspan="8" class="row-month">
             <time dateformat="{{shorthand}}">{{longhand}}</time>
           </th>
         </tr>
-        <tr class="row-kill">
+        {% for killmail in killmails %}
+        <tr class="{{killmail['row_type']}}">
           <td class="time-price">
-            19:00<br>
-            1.00m
+            {{killmail['killTime'][11:16]}}<br>
+            {{killmail['zkb']['totalValue']}}
           </td>
           <td>
-            <img src="https://imageserver.eveonline.com/Type/587_64.png"
-                 height="40" width="40" alt="Rifter">
-            <span class="name">Rifter</span>
+            <img src="https://imageserver.eveonline.com/Type/{{killmail['victim']['shipTypeID']}}_64.png"
+                 height="40" width="40" alt="WORK_IN_PROGRESS">
+            <span class="name">{{killmail['victim']['shipTypeID']}}</span>
           </td>
           <td>
-            <img src="https://image.eveonline.com/Alliance/1_64.png"
-                 height="40" width="40" alt="Evil Baddies">
+            <img src="https://image.eveonline.com/Alliance/{{killmail['victim']['allianceID']}}_64.png"
+                 height="40" width="40" alt="{{killmail['victim']['allianceName']}}">
             <span class="name">
-              Enemy Character Name<br>
-              <small>Evil Baddies</small>
+              {{killmail['victim']['characterName']}}<br>
+              <small>{{killmail['victim']['allianceName']}}</small>
             </span>
           </td>
           <td>
-            <img src="https://imageserver.eveonline.com/Alliance/498125261_64.png"
-                 height="40" width="40" alt="Test Alliance Please Ignore">
+            <img src="https://imageserver.eveonline.com/Alliance/{{killmail['final_blow']['allianceID']}}_64.png"
+                 height="40" width="40" alt="{{killmail['final_blow']['allianceName']}}">
             <span class="name">
-              Friendly Character Name<br>
-              <small>Test Alliance Please Ignore</small>
+              {{killmail['final_blow']['characterName']}}<br>
+              <small>{{killmail['final_blow']['allianceName']}}</small>
             </span>
           </td>
-          <td>TVN-FM</td>
+          <td>{{killmail['solarSystemID']}}</td>
+          <td><small>{{killmail['our_involved_html']|safe}}</small></td>
         </tr>
+        {% endfor %}
         <tr class="row-loss">
           <td class="time-price">
             18:00<br>
@@ -89,6 +93,7 @@
             </span>
           </td>
           <td>TVN-FM</td>
+          <td><small>Character Placeholder</small></td>
         </tr>
         <tr class="row-kill">
           <td class="time-price">
@@ -117,6 +122,7 @@
             </span>
           </td>
           <td>TVN-FM</td>
+          <td><small>Character Placeholder</small></td>
         </tr>
         <tr class="row-kill">
           <td class="time-price">
@@ -145,6 +151,7 @@
             </span>
           </td>
           <td>TVN-FM</td>
+          <td><small>Character Placeholder</small></td>
         </tr>
         <tr class="row-loss">
           <td class="time-price">
@@ -173,6 +180,7 @@
             </span>
           </td>
           <td>TVN-FM</td>
+          <td><small>Character Placeholder</small></td>
         </tr>
         <tr class="row-loss">
           <td class="time-price">
@@ -201,6 +209,7 @@
             </span>
           </td>
           <td>TVN-FM</td>
+          <td><small>Character Placeholder</small></td>
         </tr>
         </tbody>
       </table>

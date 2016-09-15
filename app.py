@@ -74,7 +74,42 @@ class zKillAPI():
                 if attacker['finalBlow'] == 1 or attacker['characterName'] in self.character_list.keys():
                     attacker.pop('securityStatus', None) # drop sec status
                     pruned_attackers.append(attacker)
+                    #save final_blow to top level location also
+                    if attacker['finalBlow'] == 1:
+                        mail['final_blow'] = attacker
             mail['attackers'] = pruned_attackers
+
+    def tag_as_kill_loss_or_friendly_fire(self):
+        for mail in self.history:
+            #if row_type tag exists, skip this mail
+            if mail.get('row_type', None) != None:
+                continue
+            #if one of our characters is the victim it is a loss
+            if mail.get('victim', None) != None:
+                if mail['victim'].get('characterName', None) in self.character_list.keys():
+                    #if one of our characters is on the killmail it's not just a loss
+                    #it's a friendly fire incident
+                    for attacker in mail['attackers']:
+                        if attacker['characterName'] in self.character_list.keys():
+                            mail['row_type'] = 'row-friendlyfire'
+                            break
+                    if mail.get('row_type', None) == None: # if it wasn't tagged friendly fire
+                        mail['row_type'] = 'row-loss'      # then it's just a loss
+                else: # if one of our characters isn't teh victim then it is a kill
+                    mail['row_type'] = 'row-kill'
+
+    def tag_involved_characters(self):
+        for mail in self.history:
+            #if our_chracters tag exists, skip this mail
+            if mail.get('our_characters', None) != None:
+                continue
+            #build an array of all of our characters involved
+            involved = []
+            for attacker in mail['attackers']:
+                if attacker['characterName'] in self.character_list.keys():
+                    involved.append(attacker['characterName'])
+            mail['our_characters'] = involved
+            mail['our_involved_html'] = ('<BR>'.join(x for x in involved))
 
     def write_to_file(self):
         with open('out/data/history.json', 'w') as outfile:
@@ -82,27 +117,31 @@ class zKillAPI():
 
 @app.route('/')
 def index():
+    zKill = zKillAPI()
+    zKill.update_kill_history()
+    zKill.prune_unused_history_fields()
+    zKill.tag_as_kill_loss_or_friendly_fire()
+    zKill.tag_involved_characters()
+    zKill.write_to_file()
     shorthand = datetime.now().strftime("%Y-%d-%m")
     longhand = datetime.now().strftime("%B %d, %Y")
-    return render_template('index.html', shorthand=shorthand, longhand=longhand)
+    return render_template('index.html', shorthand=shorthand, longhand=longhand, killmails=reversed(zKill.history))
 
 if __name__ == "__main__":
     if len(sys.argv) > 2 and sys.argv[2] == 'debug':
         logging.basicConfig(level=logging.DEBUG)
     if len(sys.argv) > 1 and sys.argv[1] == 'build':
-        killmails = zKillAPI()
-        killmails.update_kill_history()
-        killmails.prune_unused_history_fields()
-        killmails.write_to_file()
         freezer.freeze()
 
     elif len(sys.argv) > 1 and sys.argv[1] == 'forcezkill':
         #keep going until first page is empty
-        killmails = zKillAPI()
-        while killmails.update_kill_history() != 1:
+        zKill = zKillAPI()
+        while zKill.update_kill_history() != 1:
             time.sleep(10)
-        killmails.prune_unused_history_fields()
-        killmails.write_to_file()
+        zKill.prune_unused_history_fields()
+        zKill.tag_as_kill_loss_or_friendly_fire()
+        zKill.tag_involved_characters()
+        zKill.write_to_file()
     else:
         app.run(debug=True, host='0.0.0.0')
 
