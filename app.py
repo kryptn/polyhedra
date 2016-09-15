@@ -28,10 +28,10 @@ class zKillAPI():
 
         #load current history
         try:
-            with open('data/history.json', 'r') as fd:
+            with open('out/data/history.json', 'r') as fd:
                 self.history = json.load(fd)
         except IOError:
-            with open('data/history.json', 'a') as faild:
+            with open('out/data/history.json', 'a') as faild:
                 json.dump([], faild)
             self.history = []
         if len(self.history) == 0:
@@ -76,7 +76,7 @@ class zKillAPI():
             mail['attackers'] = pruned_attackers
 
     def write_to_file(self):
-        with open('data/history.json', 'w') as outfile:
+        with open('out/data/history.json', 'w') as outfile:
             json.dump(self.history, outfile)
 
 @app.route('/')
