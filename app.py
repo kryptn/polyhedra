@@ -4,6 +4,7 @@ import logging
 import requests
 import time
 from datetime import datetime
+from collections import defaultdict, OrderedDict
 
 from flask import Flask, render_template
 from flask_frozen import Freezer
@@ -156,6 +157,13 @@ class zKillAPI():
                 return k['zkb']['totalValue']
         return 0
 
+    def kills_by_date(self):
+        kills = defaultdict(list)
+        for kill in reversed(self.history):
+            kills[kill['killTime'].split(' ')[0]].append(kill)
+        return sorted(kills.items(), key=lambda x: x[0], reverse=True)
+
+
     def write_to_file(self):
         with open('out/data/history.json', 'w') as outfile:
             json.dump(self.history, outfile)
@@ -172,7 +180,7 @@ class zKillAPI():
     def data(self):
         result = {'kills':           self.kill_counts('row-kill'),
                   'losses':          self.kill_counts('row-loss'),
-                  'killmails':       reversed(self.history),
+                  'history':       self.kills_by_date(),
                   'money_lost':      self.kill_sums('row-loss'),
                   'money_killed':    self.kill_sums('row-kill'),
                   'friendlyfire':    self.kill_counts('row-friendlyfire'),
