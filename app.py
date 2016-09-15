@@ -190,9 +190,7 @@ class zKillAPI():
 def index():
     zKill = zKillAPI()
     zKill.build()
-    shorthand = datetime.now().strftime("%Y-%d-%m")
-    longhand = datetime.now().strftime("%B %d, %Y")
-    return render_template('index.html', shorthand=shorthand, longhand=longhand, **zKill.data)
+    return render_template('index.html', **zKill.data)
 
 if __name__ == "__main__":
     if len(sys.argv) > 2 and sys.argv[2] == 'debug':
