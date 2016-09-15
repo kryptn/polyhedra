@@ -65,6 +65,7 @@ class zKillAPI():
     def prune_unused_history_fields(self):
         for mail in self.history:
             mail.pop('moonID', None) #prune moon info
+            mail.pop('position', None) #we don't need y,x,z in-space coords
             mail['zkb'].pop('hash', None) #prune zkill hash value
             mail['zkb'].pop('points', None) #prune points metric because it means literally nothing
             mail['involved'] = len(mail['attackers']) # save number involved because we are pruning attackers
