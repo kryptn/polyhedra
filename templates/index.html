@@ -39,7 +39,7 @@
         <tr class="{{killmail['row_type']}}">
           <td class="time-price">
             {{killmail['killTime'][11:16]}}<br>
-            <a href="https://zkillboard.com/kill/{{killmail['killID']}}/">{{killmail['zkb']['totalValue']}}</a>
+            <a href="https://zkillboard.com/kill/{{killmail['killID']}}/">{{killmail['formatted_price']}}</a>
           </td>
           <td style="center">
             <a href="https://zkillboard.com/kill/{{killmail['killID']}}/"><img src="https://imageserver.eveonline.com/Type/{{killmail['victim']['shipTypeID']}}_64.png"
@@ -73,27 +73,31 @@
       <table class="table table-striped table-bordered">
         <tbody>
         <tr class="kb-table-header">
-          <th colspan="2" class="text-center">Active PVP</th>
+          <th colspan="2" class="text-center">Statistics</th>
         </tr>
         <tr>
           <th>Characters</th>
-          <td>3</td>
+          <td>{{character_count}}</td>
         </tr>
         <tr>
           <th>Total Kills</th>
-          <td>3</td>
+          <td>{{kills}}</td>
         </tr>
         <tr>
           <th>Total Losses</th>
-          <td>3</td>
+          <td>{{losses}}</td>
+        </tr>
+        <tr>
+          <th>Total Friendly Fire</th>
+          <td>{{friendlyfire}}</td>
         </tr>
         <tr>
           <th>Total ISK Killed</th>
-          <td>8.00m</td>
+          <td>{{money_killed}}</td>
         </tr>
         <tr>
           <th>Total ISK Lost</th>
-          <td>13.0m</td>
+          <td>{{money_lost}}</td>
         </tr>
         </tbody>
       </table>

@@ -112,6 +112,76 @@ class zKillAPI():
             mail['our_characters'] = involved
             mail['our_involved_html'] = ('<BR>'.join(x for x in involved))
 
+    def count_kills(self):
+        count = 0
+        for mail in self.history:
+            if mail.get('row_type', None) == 'row-kill':
+                count += 1
+        return count
+
+    def count_losses(self):
+        count = 0
+        for mail in self.history:
+            if mail.get('row_type', None) == 'row-loss':
+                count += 1
+        return count
+
+    def count_friendlyfire(self):
+        count = 0
+        for mail in self.history:
+            if mail.get('row_type', None) == 'row-friendlyfire':
+                count += 1
+        return count
+
+    def engineering_number_string(self, value):
+        powers = [10 ** x for x in (3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 100)]
+        human_powers = ('k', 'm', 'b', 't', 'qa','qi', 'sx', 'sp', 'oct', 'non', 'dec', 'googol')
+        try:
+            value = int(value)
+        except (TypeError, ValueError):
+            return value
+
+        if value < powers[0]:
+            return str(value)
+        for ordinal, power in enumerate(powers[1:], 1):
+            if value < power:
+                chopped = value / float(powers[ordinal - 1])
+                format = ''
+                if chopped < 10:
+                    format = '%.2f'
+                elif chopped < 100:
+                    format = '%.1f'
+                else:
+                    format = '%i'
+                return (''.join([format, human_powers[ordinal - 1]])) % chopped
+        return str(value)
+
+    def tag_formatted_values(self):
+        for mail in self.history:
+            #if formatted_price tag exists, skip this mail
+            if mail.get('formatted_price', None) != None:
+                continue
+            #grab the totalValue
+            mail['formatted_price'] = self.engineering_number_string(mail['zkb']['totalValue'])
+
+    def add_kill_values(self):
+        count = 0
+        for mail in self.history:
+            if mail.get('row_type', None) == 'row-kill' or mail.get('row_type', None) == 'row-friendlyfire':
+                if mail.get('zkb', None) != None:
+                    if mail['zkb'].get('totalValue', None) != None:
+                        count += mail['zkb']['totalValue']
+        return self.engineering_number_string(count)
+
+    def add_loss_values(self):
+        count = 0
+        for mail in self.history:
+            if mail.get('row_type', None) == 'row-loss' or mail.get('row_type', None) == 'row-friendlyfire':
+                if mail.get('zkb', None) != None:
+                    if mail['zkb'].get('totalValue', None) != None:
+                        count += mail['zkb']['totalValue']
+        return self.engineering_number_string(count)
+
     def write_to_file(self):
         with open('out/data/history.json', 'w') as outfile:
             json.dump(self.history, outfile)
@@ -123,10 +193,11 @@ def index():
     zKill.prune_unused_history_fields()
     zKill.tag_as_kill_loss_or_friendly_fire()
     zKill.tag_involved_characters()
+    zKill.tag_formatted_values()
     zKill.write_to_file()
     shorthand = datetime.now().strftime("%Y-%d-%m")
     longhand = datetime.now().strftime("%B %d, %Y")
-    return render_template('index.html', shorthand=shorthand, longhand=longhand, killmails=reversed(zKill.history))
+    return render_template('index.html', shorthand=shorthand, longhand=longhand, killmails=reversed(zKill.history), kills=zKill.count_kills(), losses=zKill.count_losses(), friendlyfire=zKill.count_friendlyfire(), character_count=len(zKill.character_list), money_killed=zKill.add_kill_values(), money_lost=zKill.add_loss_values())
 
 if __name__ == "__main__":
     if len(sys.argv) > 2 and sys.argv[2] == 'debug':
@@ -142,6 +213,7 @@ if __name__ == "__main__":
         zKill.prune_unused_history_fields()
         zKill.tag_as_kill_loss_or_friendly_fire()
         zKill.tag_involved_characters()
+        zKill.tag_formatted_values()
         zKill.write_to_file()
     else:
         app.run(debug=True, host='0.0.0.0')
