@@ -112,30 +112,8 @@ class zKillAPI():
             mail['our_characters'] = involved
             mail['our_involved_html'] = ('<BR>'.join(x for x in involved))
 
-    def count_kills(self): # unused now
-        count = 0
-        for mail in self.history:
-            if mail.get('row_type', None) == 'row-kill':
-                count += 1
-        return count
-
-    def count_losses(self): # unused now
-        count = 0
-        for mail in self.history:
-            if mail.get('row_type', None) == 'row-loss':
-                count += 1
-        return count
-
-    def count_friendlyfire(self): # unused now
-        count = 0
-        for mail in self.history:
-            if mail.get('row_type', None) == 'row-friendlyfire':
-                count += 1
-        return count
-
     def kill_counts(self, killtype):
         return len([x for x in self.history if x['row_type'] == killtype])
-
 
     def engineering_number_string(self, value):
         powers = [10 ** x for x in (3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 100)]
@@ -167,24 +145,6 @@ class zKillAPI():
                 continue
             #grab the totalValue
             mail['formatted_price'] = self.engineering_number_string(mail['zkb']['totalValue'])
-
-    def add_kill_values(self): # unused now
-        count = 0
-        for mail in self.history:
-            if mail.get('row_type', None) == 'row-kill' or mail.get('row_type', None) == 'row-friendlyfire':
-                if mail.get('zkb', None) != None:
-                    if mail['zkb'].get('totalValue', None) != None:
-                        count += mail['zkb']['totalValue']
-        return self.engineering_number_string(count)
-
-    def add_loss_values(self): # unused now
-        count = 0
-        for mail in self.history:
-            if mail.get('row_type', None) == 'row-loss' or mail.get('row_type', None) == 'row-friendlyfire':
-                if mail.get('zkb', None) != None:
-                    if mail['zkb'].get('totalValue', None) != None:
-                        count += mail['zkb']['totalValue']
-        return self.engineering_number_string(count)
 
     def kill_sums(self, killtype):
         r = sum(self.verify_kill(x, killtype) for x in self.history)
