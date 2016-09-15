@@ -24,10 +24,10 @@
         <tbody>
         <tr class="kb-table-header">
           <th></th>
-          <th>Ship Type</th>
+          <th>Ship</th>
+          <th>Location</th>
           <th>Pilot</th>
           <th>Final Blow</th>
-          <th>Location</th>
           <th>Involved Characters</th>
         </tr>
         <tr class="kb-table-row-date">
@@ -39,178 +39,33 @@
         <tr class="{{killmail['row_type']}}">
           <td class="time-price">
             {{killmail['killTime'][11:16]}}<br>
-            {{killmail['zkb']['totalValue']}}
+            <a href="https://zkillboard.com/kill/{{killmail['killID']}}/">{{killmail['zkb']['totalValue']}}</a>
           </td>
-          <td>
-            <img src="https://imageserver.eveonline.com/Type/{{killmail['victim']['shipTypeID']}}_64.png"
-                 height="40" width="40" alt="WORK_IN_PROGRESS">
-            <span class="name">{{killmail['victim']['shipTypeID']}}</span>
+          <td style="center">
+            <a href="https://zkillboard.com/kill/{{killmail['killID']}}/"><img src="https://imageserver.eveonline.com/Type/{{killmail['victim']['shipTypeID']}}_64.png"
+                 height="40" width="40" alt="WORK_IN_PROGRESS"></a>
           </td>
+          <td><span class="name"><a href="https://zkillboard.com/system/{{killmail['solarSystemID']}}/">{{killmail['solarSystemID']}}</a></span></td>
           <td>
-            <img src="https://image.eveonline.com/Alliance/{{killmail['victim']['allianceID']}}_64.png"
-                 height="40" width="40" alt="{{killmail['victim']['allianceName']}}">
+            <a href="https://zkillboard.com/alliance/{{killmail['victim']['allianceID']}}/"><img src="https://image.eveonline.com/Alliance/{{killmail['victim']['allianceID']}}_64.png"
+                 height="40" width="40" alt="{{killmail['victim']['allianceName']}}"></a>
             <span class="name">
-              {{killmail['victim']['characterName']}}<br>
-              <small>{{killmail['victim']['allianceName']}}</small>
+              <a href="https://zkillboard.com/character/{{killmail['victim']['characterID']}}/">{{killmail['victim']['characterName']}}</a>
+              <span class="greytext">({{killmail['victim']['shipTypeID']}})</span>
+              <br><small><a href="https://zkillboard.com/alliance/{{killmail['victim']['allianceID']}}/">{{killmail['victim']['allianceName']}}</a></small>
             </span>
           </td>
           <td>
-            <img src="https://imageserver.eveonline.com/Alliance/{{killmail['final_blow']['allianceID']}}_64.png"
-                 height="40" width="40" alt="{{killmail['final_blow']['allianceName']}}">
+            <a href="https://zkillboard.com/alliance/{{killmail['final_blow']['allianceID']}}/"><img src="https://imageserver.eveonline.com/Alliance/{{killmail['final_blow']['allianceID']}}_64.png"
+                 height="40" width="40" alt="{{killmail['final_blow']['allianceName']}}"></a>
             <span class="name">
-              {{killmail['final_blow']['characterName']}}<br>
-              <small>{{killmail['final_blow']['allianceName']}}</small>
+              <a href="https://zkillboard.com/character/{{killmail['final_blow']['characterID']}}/">{{killmail['final_blow']['characterName']}}</a> <span class="greytext">({{killmail['involved']}})</span><br>
+              <small><a href="https://zkillboard.com/alliance/{{killmail['final_blow']['allianceID']}}/">{{killmail['final_blow']['allianceName']}}</a></small>
             </span>
           </td>
-          <td>{{killmail['solarSystemID']}}</td>
           <td><small>{{killmail['our_involved_html']|safe}}</small></td>
         </tr>
         {% endfor %}
-        <tr class="row-loss">
-          <td class="time-price">
-            18:00<br>
-            2.00m
-          </td>
-          <td>
-            <img src="https://imageserver.eveonline.com/Type/587_64.png"
-                 height="40" width="40" alt="Rifter">
-            <span class="name">Rifter</span>
-          </td>
-          <td>
-            <img src="https://imageserver.eveonline.com/Alliance/498125261_64.png"
-                 height="40" width="40" alt="Test Alliance Please Ignore">
-            <span class="name">
-              Friendly Character Name<br>
-              <small>Test Alliance Please Ignore</small>
-            </span>
-          </td>
-          <td>
-            <img src="https://image.eveonline.com/Alliance/1_64.png"
-                 height="40" width="40" alt="Evil Baddies">
-            <span class="name">
-              Enemy Character Name<br>
-              <small>Evil Baddies</small>
-            </span>
-          </td>
-          <td>TVN-FM</td>
-          <td><small>Character Placeholder</small></td>
-        </tr>
-        <tr class="row-kill">
-          <td class="time-price">
-            17:00<br>
-            3.00m
-          </td>
-          <td>
-            <img src="https://imageserver.eveonline.com/Type/587_64.png"
-                 height="40" width="40" alt="Rifter">
-            <span class="name">Rifter</span>
-          </td>
-          <td>
-            <img src="https://image.eveonline.com/Alliance/1_64.png"
-                 height="40" width="40" alt="Evil Baddies">
-            <span class="name">
-              Enemy Character Name<br>
-              <small>Evil Baddies</small>
-            </span>
-          </td>
-          <td>
-            <img src="https://imageserver.eveonline.com/Alliance/498125261_64.png"
-                 height="40" width="40" alt="Test Alliance Please Ignore">
-            <span class="name">
-              Friendly Character Name<br>
-              <small>Test Alliance Please Ignore</small>
-            </span>
-          </td>
-          <td>TVN-FM</td>
-          <td><small>Character Placeholder</small></td>
-        </tr>
-        <tr class="row-kill">
-          <td class="time-price">
-            16:00<br>
-            4.00m
-          </td>
-          <td>
-            <img src="https://imageserver.eveonline.com/Type/587_64.png"
-                 height="40" width="40" alt="Rifter">
-            <span class="name">Rifter</span>
-          </td>
-          <td>
-            <img src="https://image.eveonline.com/Alliance/1_64.png"
-                 height="40" width="40" alt="Evil Baddies">
-            <span class="name">
-              Enemy Character Name<br>
-              <small>Evil Baddies</small>
-            </span>
-          </td>
-          <td>
-            <img src="https://imageserver.eveonline.com/Alliance/498125261_64.png"
-                 height="40" width="40" alt="Test Alliance Please Ignore">
-            <span class="name">
-              Friendly Character Name<br>
-              <small>Test Alliance Please Ignore</small>
-            </span>
-          </td>
-          <td>TVN-FM</td>
-          <td><small>Character Placeholder</small></td>
-        </tr>
-        <tr class="row-loss">
-          <td class="time-price">
-            15:00<br>
-            5.00m
-          </td>
-          <td>
-            <img src="https://imageserver.eveonline.com/Type/587_64.png"
-                 height="40" width="40" alt="Rifter">
-            <span class="name">Rifter</span>
-          </td>
-          <td>
-            <img src="https://imageserver.eveonline.com/Alliance/498125261_64.png"
-                 height="40" width="40" alt="Test Alliance Please Ignore">
-            <span class="name">
-              Friendly Character Name<br>
-              <small>Test Alliance Please Ignore</small>
-            </span>
-          </td>
-          <td>
-            <img src="https://image.eveonline.com/Alliance/1_64.png"
-                 height="40" width="40" alt="Evil Baddies">
-            <span class="name">
-              Enemy Character Name<br>
-              <small>Evil Baddies</small>
-            </span>
-          </td>
-          <td>TVN-FM</td>
-          <td><small>Character Placeholder</small></td>
-        </tr>
-        <tr class="row-loss">
-          <td class="time-price">
-            14:00<br>
-            6.00m
-          </td>
-          <td>
-            <img src="https://imageserver.eveonline.com/Type/587_64.png"
-                 height="40" width="40" alt="Rifter">
-            <span class="name">Rifter</span>
-          </td>
-          <td>
-            <img src="https://imageserver.eveonline.com/Alliance/498125261_64.png"
-                 height="40" width="40" alt="Test Alliance Please Ignore">
-            <span class="name">
-              Friendly Character Name<br>
-              <small>Test Alliance Please Ignore</small>
-            </span>
-          </td>
-          <td>
-            <img src="https://image.eveonline.com/Alliance/1_64.png"
-                 height="40" width="40" alt="Evil Baddies">
-            <span class="name">
-              Enemy Character Name<br>
-              <small>Evil Baddies</small>
-            </span>
-          </td>
-          <td>TVN-FM</td>
-          <td><small>Character Placeholder</small></td>
-        </tr>
         </tbody>
       </table>
     </div>

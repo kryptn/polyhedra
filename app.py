@@ -68,7 +68,8 @@ class zKillAPI():
             mail.pop('position', None) #we don't need y,x,z in-space coords
             mail['zkb'].pop('hash', None) #prune zkill hash value
             mail['zkb'].pop('points', None) #prune points metric because it means literally nothing
-            mail['involved'] = len(mail['attackers']) # save number involved because we are pruning attackers
+            if mail.get('involved', None) == None:
+                mail['involved'] = len(mail['attackers']) # save number involved because we are pruning attackers
             pruned_attackers = []
             for attacker in mail['attackers']: #keep only those on character_list or finalBlow == 1
                 if attacker['finalBlow'] == 1 or attacker['characterName'] in self.character_list.keys():

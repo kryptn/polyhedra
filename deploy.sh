@@ -32,6 +32,8 @@ python app.py build
 # copy over README.md and .gitignore
 cp .gitignore out/.gitignore
 cp README.md out/README.md
+touch out/data/
+touch out/static/
 
 # Move our output from build onto our gh-pages branch root
 cd out/build
