@@ -4,6 +4,7 @@ import logging
 import requests
 import time
 from datetime import datetime
+from collections import defaultdict
 
 from flask import Flask, render_template
 from flask_frozen import Freezer
@@ -112,26 +113,8 @@ class zKillAPI():
             mail['our_characters'] = involved
             mail['our_involved_html'] = ('<BR>'.join(x for x in involved))
 
-    def count_kills(self):
-        count = 0
-        for mail in self.history:
-            if mail.get('row_type', None) == 'row-kill':
-                count += 1
-        return count
-
-    def count_losses(self):
-        count = 0
-        for mail in self.history:
-            if mail.get('row_type', None) == 'row-loss':
-                count += 1
-        return count
-
-    def count_friendlyfire(self):
-        count = 0
-        for mail in self.history:
-            if mail.get('row_type', None) == 'row-friendlyfire':
-                count += 1
-        return count
+    def kill_counts(self, killtype):
+        return len([x for x in self.history if x['row_type'] == killtype])
 
     def engineering_number_string(self, value):
         powers = [10 ** x for x in (3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 100)]
@@ -164,40 +147,50 @@ class zKillAPI():
             #grab the totalValue
             mail['formatted_price'] = self.engineering_number_string(mail['zkb']['totalValue'])
 
-    def add_kill_values(self):
-        count = 0
-        for mail in self.history:
-            if mail.get('row_type', None) == 'row-kill' or mail.get('row_type', None) == 'row-friendlyfire':
-                if mail.get('zkb', None) != None:
-                    if mail['zkb'].get('totalValue', None) != None:
-                        count += mail['zkb']['totalValue']
-        return self.engineering_number_string(count)
+    def kill_sums(self, killtype):
+        r = sum(self.verify_kill(x, killtype) for x in self.history)
+        return self.engineering_number_string(r)
 
-    def add_loss_values(self):
-        count = 0
-        for mail in self.history:
-            if mail.get('row_type', None) == 'row-loss' or mail.get('row_type', None) == 'row-friendlyfire':
-                if mail.get('zkb', None) != None:
-                    if mail['zkb'].get('totalValue', None) != None:
-                        count += mail['zkb']['totalValue']
-        return self.engineering_number_string(count)
+    def verify_kill(self, k, killtype):
+        if k['row_type'] in [killtype, 'row-friendlyfire']:
+            if 'zkb' in k and 'totalValue' in k['zkb']:
+                return k['zkb']['totalValue']
+        return 0
+
+    def kills_by_date(self):
+        kills = defaultdict(list)
+        for kill in reversed(self.history):
+            kills[kill['killTime'].split(' ')[0]].append(kill)
+        return sorted(kills.items(), key=lambda x: x[0], reverse=True)
 
     def write_to_file(self):
         with open('out/data/history.json', 'w') as outfile:
             json.dump(self.history, outfile)
 
+    def build(self):
+        self.update_kill_history()
+        self.prune_unused_history_fields()
+        self.tag_as_kill_loss_or_friendly_fire()
+        self.tag_involved_characters()
+        self.tag_formatted_values()
+        self.write_to_file()
+
+    @property
+    def data(self):
+        result = {'kills':           self.kill_counts('row-kill'),
+                  'losses':          self.kill_counts('row-loss'),
+                  'history':         self.kills_by_date(),
+                  'money_lost':      self.kill_sums('row-loss'),
+                  'money_killed':    self.kill_sums('row-kill'),
+                  'friendlyfire':    self.kill_counts('row-friendlyfire'),
+                  'character_count': len(self.character_list)}
+        return result
+
 @app.route('/')
 def index():
     zKill = zKillAPI()
-    zKill.update_kill_history()
-    zKill.prune_unused_history_fields()
-    zKill.tag_as_kill_loss_or_friendly_fire()
-    zKill.tag_involved_characters()
-    zKill.tag_formatted_values()
-    zKill.write_to_file()
-    shorthand = datetime.now().strftime("%Y-%d-%m")
-    longhand = datetime.now().strftime("%B %d, %Y")
-    return render_template('index.html', shorthand=shorthand, longhand=longhand, killmails=reversed(zKill.history), kills=zKill.count_kills(), losses=zKill.count_losses(), friendlyfire=zKill.count_friendlyfire(), character_count=len(zKill.character_list), money_killed=zKill.add_kill_values(), money_lost=zKill.add_loss_values())
+    zKill.build()
+    return render_template('index.html', **zKill.data)
 
 if __name__ == "__main__":
     if len(sys.argv) > 2 and sys.argv[2] == 'debug':

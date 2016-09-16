@@ -30,9 +30,11 @@
           <th>Final Blow</th>
           <th>Involved Characters</th>
         </tr>
+
+        {% for day, killmails in history %}
         <tr class="kb-table-row-date">
           <th colspan="8" class="row-month">
-            <time dateformat="{{shorthand}}">{{longhand}}</time>
+              <time dateformat="{{day}}">{{day}}</time>
           </th>
         </tr>
         {% for killmail in killmails %}
@@ -65,6 +67,7 @@
           </td>
           <td><small>{{killmail['our_involved_html']|safe}}</small></td>
         </tr>
+        {% endfor %}
         {% endfor %}
         </tbody>
       </table>
