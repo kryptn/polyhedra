@@ -4,36 +4,45 @@ set -e # Exit with nonzero exit code if anything fails
 SOURCE_BRANCH="master"
 TARGET_BRANCH="gh-pages"
 
+build_normal()
+{
+    echo "Running ~The Build~"
+    # Save some useful information
+    REPO=`git config remote.origin.url`
+    SSH_REPO=${REPO/https:\/\/github.com\//git@github.com:}
+    SHA=`git rev-parse --verify HEAD`
+
+    # Clone the existing gh-pages for this repo into out/
+    # Create a new empty branch if gh-pages doesn't exist yet (should only happen on first deply)
+    git clone $REPO out
+    cd out
+    git checkout $TARGET_BRANCH || git checkout --orphan $TARGET_BRANCH
+    cd ..
+
+    # Clean out existing contents of build
+    rm -rf out/build/* || exit 0
+
+    # Ensure needed directories are present
+    mkdir -p out/data
+    mkdir -p out/static
+
+    # Run our compile script
+    python app.py build
+}
+
 # Pull requests and commits to other branches shouldn't try to deploy, just build to verify
 if [ "$TRAVIS_PULL_REQUEST" != "false" -o "$TRAVIS_BRANCH" != "$SOURCE_BRANCH" ]; then
-    echo "Running ~The Build~"
-    python app.py build
+    build_normal
     exit 0
 fi
 
-# Save some useful information
-REPO=`git config remote.origin.url`
-SSH_REPO=${REPO/https:\/\/github.com\//git@github.com:}
-SHA=`git rev-parse --verify HEAD`
+# run normal build
+build_normal
 
-# Clone the existing gh-pages for this repo into out/
-# Create a new empty branch if gh-pages doesn't exist yet (should only happen on first deply)
-git clone $REPO out
-cd out
-git checkout $TARGET_BRANCH || git checkout --orphan $TARGET_BRANCH
-cd ..
-
-# Clean out existing contents of build
-rm -rf out/build/* || exit 0
-
-# Run our compile script
-python app.py build
-
+# prepare to push to remote
 # copy over README.md and .gitignore
 cp .gitignore out/.gitignore
 cp README.md out/README.md
-touch out/data/
-touch out/static/
 
 # Move our output from build onto our gh-pages branch root
 cd out/build
@@ -51,7 +60,7 @@ fi
 
 # Commit the "changes", i.e. the new version.
 # The delta will show diffs between new and old versions.
-git add .
+git add -A
 git commit -m "Deploy to GitHub Pages: ${SHA}"
 
 # Get the deploy key by using Travis's stored variables to decrypt deploy_key.enc
