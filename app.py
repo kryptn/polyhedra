@@ -27,11 +27,15 @@ class Kill(db.Model):
     involved = db.relationship('Entity', primaryjoin='Entity.id==Kill.involved_id', uselist=True)
     victim = db.relationship('Entity', primaryjoin='Entity.id==Kill.victim_id')
     final_blow = db.relationship('Entity', primaryjoin='Entity.id==Kill.final_blow_id')
+    system = db.relationship('Party', primaryjoin='Party.id==Kill.system_id')
     value = db.Column(db.Float)
 
-    involved_id = db.Column(db.Integer, db.ForeignKey('entity.id'))
+    
     victim_id = db.Column(db.Integer, db.ForeignKey('entity.id'))
+    system_id = db.Column(db.Integer, db.ForeignKey('party.id'))
+    involved_id = db.Column(db.Integer, db.ForeignKey('entity.id'))
     final_blow_id = db.Column(db.Integer, db.ForeignKey('entity.id'))
+    
     url = 'https://zkillboard.com/api{}'
     kills_slug = '/character/{chars}/{killid}no-items/page/{page}'
 
@@ -39,6 +43,7 @@ class Kill(db.Model):
         self.id = kill['killID']
         self.kill_time = datetime.strptime(kill['killTime'], '%Y-%m-%d %H:%M:%S')
         self.victim = Entity(kill['victim'])
+        self.system = Party(kill['solarSystemID'], '')
         self.final_blow = Entity(list(filter(lambda x: x['finalBlow'], kill['attackers']))[0])
         self.value = kill['zkb']['totalValue']
         for inv in kill['attackers']:
@@ -122,22 +127,23 @@ class Entity(db.Model):
     __tablename__ = 'entity'
     id = db.Column(db.Integer, primary_key=True)
     kill_id = db.Column(db.Integer, db.ForeignKey('kill.id'))
-    name_id = db.Column(db.Integer, db.ForeignKey('party.id'))
     name = db.relationship('Party', primaryjoin='Party.id==Entity.name_id' )
-    corp_id = db.Column(db.Integer, db.ForeignKey('party.id'))
     corp = db.relationship('Party', primaryjoin='Party.id==Entity.corp_id')
-    alliance_id = db.Column(db.Integer, db.ForeignKey('party.id'))
     alliance = db.relationship('Party', primaryjoin='Party.id==Entity.alliance_id')
-    ship_id = db.Column(db.Integer, db.ForeignKey('party.id'))
     ship = db.relationship('Party', primaryjoin='Party.id==Entity.ship_id')
     damage = db.Column(db.Integer)
 
+    name_id = db.Column(db.Integer, db.ForeignKey('party.id'))
+    corp_id = db.Column(db.Integer, db.ForeignKey('party.id'))
+    alliance_id = db.Column(db.Integer, db.ForeignKey('party.id'))
+    ship_id = db.Column(db.Integer, db.ForeignKey('party.id'))
+    
     def __init__(self, entity):
         self.name = Party(entity['characterID'], entity['characterName'])
         self.corp = Party(entity['corporationID'], entity['corporationName'])
         if entity['allianceID']:
             self.alliance = Party(entity['allianceID'], entity['allianceName'])
-        self.ship = Party(entity['shipTypeID'], "LOLNAMEIDONTHAVEITYET")
+        self.ship = Party(entity['shipTypeID'], '')
         if 'damageTaken' in entity:
             self.damage = entity['damageTaken']
         else:
@@ -157,6 +163,18 @@ class Party(db.Model):
             db.session.commit()
         else:
             self = q
+
+    @staticmethod
+    def unnamed_systems():
+        return Party.query.filter(Party.id >= 30000000).filter(Party.name == '')
+
+    @staticmethod
+    def populate():
+        systems = Party.unnamed_systems()
+        for system in systems:
+            r = requests.get('https://crest-tq.eveonline.com/solarsystems/{}/'.format(system.id))
+            system.name = r.json()['name']
+
     
 class zKillAPI():
     def __init__(self):
