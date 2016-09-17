@@ -169,11 +169,23 @@ class Party(db.Model):
         return Party.query.filter(Party.id >= 30000000).filter(Party.name == '')
 
     @staticmethod
+    def unnamed_types():
+        return Party.query.filter(Party.id < 30000000).filter(Party.name == '')
+
+    @staticmethod
     def populate():
         systems = Party.unnamed_systems()
         for system in systems:
             r = requests.get('https://crest-tq.eveonline.com/solarsystems/{}/'.format(system.id))
             system.name = r.json()['name']
+
+        types = Party.unnamed_types()
+        with open('typeids.json') as fd:
+            sdd = json.load(fd)
+        for t in types:
+            t.name = sdd[str(t.id)]
+
+
 
     
 class zKillAPI():
