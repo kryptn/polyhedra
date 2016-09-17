@@ -28,7 +28,10 @@ class Kill(db.Model):
     victim = db.relationship('Entity', primaryjoin='Entity.id==Kill.victim_id')
     final_blow = db.relationship('Entity', primaryjoin='Entity.id==Kill.final_blow_id')
     system = db.relationship('Party', primaryjoin='Party.id==Kill.system_id')
+    others = db.Column(db.Integer)
     value = db.Column(db.Float)
+    kill = db.Column(db.Boolean, default=True)
+    loss = db.Column(db.Boolean, default=False)
 
     
     victim_id = db.Column(db.Integer, db.ForeignKey('entity.id'))
@@ -46,45 +49,70 @@ class Kill(db.Model):
         self.system = Party(kill['solarSystemID'], '')
         self.final_blow = Entity(list(filter(lambda x: x['finalBlow'], kill['attackers']))[0])
         self.value = kill['zkb']['totalValue']
+        self.others = len(kill['attackers'])
         for inv in kill['attackers']:
             if inv['characterName'] in app.config['characters']:
                 self.involved.append(Entity(inv))
 
+        
+
+        if self.victim.character.name in app.config['characters']:
+            self.loss = True
+        if not self.involved:
+            self.kill = False
     
     def mail(self):
         data = {'killid': self.id,
                 'value': self.value,
                 'victim': self.victim,
+                'system': self.system,
+                'kill_time': self.kill_time,
+                'mail_type': self.mail_type(),
                 'final_blow': self.final_blow,
                 'involved': sorted(self.involved, key=lambda x: x.damage)}
         return data
 
-    @staticmethod
-    def kills(chars):
-        return Kill.query.filter(Kill.victim.name.name.notin_(chars))
+    def mail_type(self):
+        if self.loss and self.kill:
+            return 'friendlyfire'
+        if self.loss:
+            return 'loss'
+        if self.kill:
+            return 'kill'
+
 
     @staticmethod
-    def losses(chars):
-        return Kill.query.filter(Kill.victim.name.name.in_(chars))
+    def kills():
+        return Kill.query.filter(Kill.kill == True)
 
     @staticmethod
-    def friendly(chars):
-        return [x for x in Kill.losses(chars) if any(y in chars for y in x.involved)]
+    def losses():
+        return Kill.query.filter(Kill.loss == True)
 
+    @staticmethod
+    def friendly():
+        return Kill.query.filter(db.and_(Kill.loss == True, Kill.kill == True))
     
     @staticmethod
     def board(chars):
         result = Kill.query.order_by(Kill.id.desc())
-        ks = Kill.kills(chars)
-        ls = Kill.losses(chars)
-        data = {'kills': [k.mail() for k in result],
+        klist = [k.mail() for k in result]
+        dlist = defaultdict(list)
+        for k in klist:
+            dlist[k['kill_time'].strftime('%Y-%m-%d')].append(k)
+
+
+        ks = Kill.kills()
+        ls = Kill.losses()
+        data = {'list': sorted(dlist.items(), key=lambda x: x[0], reverse=True),
                 'character_count': len(chars),
                 'losses': ls.count(),
                 'kills': ks.count(),
-                'friendlyfire': Kill.friendlyfire().count(),
+                'friendlyfire': Kill.friendly().count(),
                 'isk_killed': sum(x.value for x in ks),
-                'isk_losst': sum(x.value for x in ls),
+                'isk_lost': sum(x.value for x in ls),
                 'characters': sorted(chars.items(), key=lambda x: x[0])}
+        return data
 
     @staticmethod
     def makeurl(chars, page):
@@ -120,26 +148,29 @@ class Kill(db.Model):
             for k in kills:
                 db.session.add(Kill(k))
             db.session.commit()
-
+        
+            Party.populate()
 
 
 class Entity(db.Model):
     __tablename__ = 'entity'
     id = db.Column(db.Integer, primary_key=True)
     kill_id = db.Column(db.Integer, db.ForeignKey('kill.id'))
-    name = db.relationship('Party', primaryjoin='Party.id==Entity.name_id' )
+    character = db.relationship('Party', primaryjoin='Party.id==Entity.character_id' )
     corp = db.relationship('Party', primaryjoin='Party.id==Entity.corp_id')
     alliance = db.relationship('Party', primaryjoin='Party.id==Entity.alliance_id')
     ship = db.relationship('Party', primaryjoin='Party.id==Entity.ship_id')
     damage = db.Column(db.Integer)
 
-    name_id = db.Column(db.Integer, db.ForeignKey('party.id'))
+
+
+    character_id = db.Column(db.Integer, db.ForeignKey('party.id'))
     corp_id = db.Column(db.Integer, db.ForeignKey('party.id'))
     alliance_id = db.Column(db.Integer, db.ForeignKey('party.id'))
     ship_id = db.Column(db.Integer, db.ForeignKey('party.id'))
     
     def __init__(self, entity):
-        self.name = Party(entity['characterID'], entity['characterName'])
+        self.character = Party(entity['characterID'], entity['characterName'])
         self.corp = Party(entity['corporationID'], entity['corporationName'])
         if entity['allianceID']:
             self.alliance = Party(entity['allianceID'], entity['allianceName'])
@@ -164,6 +195,9 @@ class Party(db.Model):
         else:
             self = q
 
+    def __repr__(self):
+        return self.name
+
     @staticmethod
     def unnamed_systems():
         return Party.query.filter(Party.id >= 30000000).filter(Party.name == '')
@@ -185,7 +219,7 @@ class Party(db.Model):
         for t in types:
             t.name = sdd[str(t.id)]
 
-
+        db.session.commit()
 
     
 class zKillAPI():
@@ -368,11 +402,8 @@ class zKillAPI():
 @app.route('/', defaults={'charid': None})
 @app.route('/<int:charid>/')
 def index(charid):
-    zKill = zKillAPI()
-    zKill.build()
-    if charid:
-        zKill.use_character(charid)
-    return render_template('index.html', **zKill.data)
+    killboard = Kill.board(app.config['characters'])
+    return render_template('index.html', **killboard)
 
 @freezer.register_generator
 def index():

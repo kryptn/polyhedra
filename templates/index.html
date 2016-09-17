@@ -31,41 +31,41 @@
           <th>Involved Characters</th>
         </tr>
 
-        {% for day, killmails in history %}
+        {% for day, killmails in list %}
         <tr class="kb-table-row-date">
           <th colspan="8" class="row-month">
               <time dateformat="{{day}}">{{day}}</time>
           </th>
         </tr>
         {% for killmail in killmails %}
-        <tr class="{{killmail['row_type']}}">
+        <tr class="{{killmail.mail_type}}">
           <td class="time-price">
-            {{killmail['killTime'][11:16]}}<br>
-            <a href="https://zkillboard.com/kill/{{killmail['killID']}}/">{{killmail['formatted_price']}}</a>
+            {{killmail.kill_time.strftime('%H:%M')}}<br>
+            <a href="https://zkillboard.com/kill/{{killmail.killid}}/">{{killmail['formatted_price']}}</a>
           </td>
           <td style="center">
-            <a href="https://zkillboard.com/kill/{{killmail['killID']}}/"><img src="https://imageserver.eveonline.com/Type/{{killmail['victim']['shipTypeID']}}_64.png"
+            <a href="https://zkillboard.com/kill/{{killmail.killid}}/"><img src="https://imageserver.eveonline.com/Type/{{killmail.victim.ship.id}}_64.png"
                  height="40" width="40" alt="WORK_IN_PROGRESS"></a>
           </td>
-          <td><span class="name"><a href="https://zkillboard.com/system/{{killmail['solarSystemID']}}/">{{killmail['solarSystemID']}}</a></span></td>
+          <td><span class="name"><a href="https://zkillboard.com/system/{{killmail.system.id}}/">{{killmail.system.name}}</a></span></td>
           <td>
-            <a href="https://zkillboard.com/alliance/{{killmail['victim']['allianceID']}}/"><img src="https://image.eveonline.com/Alliance/{{killmail['victim']['allianceID']}}_64.png"
-                 height="40" width="40" alt="{{killmail['victim']['allianceName']}}"></a>
+            <a href="https://zkillboard.com/alliance/{{killmail.victim.alliance.id}}/"><img src="https://image.eveonline.com/Alliance/{{killmail.victim.alliance.id}}_64.png"
+                 height="40" width="40" alt="{{killmail.victim.alliance.name}}"></a>
             <span class="name">
-              <a href="https://zkillboard.com/character/{{killmail['victim']['characterID']}}/">{{killmail['victim']['characterName']}}</a>
-              <span class="greytext">({{killmail['victim']['shipTypeID']}})</span>
-              <br><small><a href="https://zkillboard.com/alliance/{{killmail['victim']['allianceID']}}/">{{killmail['victim']['allianceName']}}</a></small>
+              <a href="https://zkillboard.com/character/{{killmail.victim.character.id}}/">{{killmail.victim.character.name}}</a>
+              <span class="greytext">({{killmail.victim.ship.name}})</span>
+              <br><small><a href="https://zkillboard.com/alliance/{{killmail.victim.alliance.id}}/">{{killmail.victim.alliance.name}}</a></small>
             </span>
           </td>
           <td>
-            <a href="https://zkillboard.com/alliance/{{killmail['final_blow']['allianceID']}}/"><img src="https://imageserver.eveonline.com/Alliance/{{killmail['final_blow']['allianceID']}}_64.png"
-                 height="40" width="40" alt="{{killmail['final_blow']['allianceName']}}"></a>
+            <a href="https://zkillboard.com/alliance/{{killmail.final_blow.alliance.id}}/"><img src="https://imageserver.eveonline.com/Alliance/{{killmail.final_blow.alliance.id}}_64.png"
+                 height="40" width="40" alt="{{killmail.final_blow.alliance.name}}"></a>
             <span class="name">
-              <a href="https://zkillboard.com/character/{{killmail['final_blow']['characterID']}}/">{{killmail['final_blow']['characterName']}}</a> <span class="greytext">({{killmail['involved']}})</span><br>
-              <small><a href="https://zkillboard.com/alliance/{{killmail['final_blow']['allianceID']}}/">{{killmail['final_blow']['allianceName']}}</a></small>
+              <a href="https://zkillboard.com/character/{{killmail.final_blow.character.id}}/">{{killmail.final_blow.character.name}}</a> <span class="greytext">({{killmail.others}})</span><br>
+              <small><a href="https://zkillboard.com/alliance/{{killmail.final_blow.alliance.name}}/">{{killmail.final_blow.alliance.name}}</a></small>
             </span>
           </td>
-          <td><small>{{killmail['our_involved_html']|safe}}</small></td>
+          <td><small>{% for pilot in killmail.involved %} <span>{{pilot.character.name}}</span> {% endfor %}
         </tr>
         {% endfor %}
         {% endfor %}
@@ -96,11 +96,11 @@
         </tr>
         <tr>
           <th>Total ISK Killed</th>
-          <td>{{money_killed}}</td>
+          <td>{{isk_killed}}</td>
         </tr>
         <tr>
           <th>Total ISK Lost</th>
-          <td>{{money_lost}}</td>
+          <td>{{isk_lost}}</td>
         </tr>
         </tbody>
       </table>
