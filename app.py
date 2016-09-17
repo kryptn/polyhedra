@@ -6,49 +6,158 @@ import time
 from datetime import datetime
 from collections import defaultdict
 
+import yaml
 from flask import Flask, render_template
 from flask_frozen import Freezer
 from flask_sqlalchemy import SQLAlchemy
 
 
 app = Flask(__name__)
+
+with open('config.yml') as fd:
+    app.config.update(yaml.load(fd))
+
 freezer = Freezer(app)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///kills.db'
-app.config['FREEZER_DESTINATION'] = 'out/build'
-app.config['FREEZER_RELATIVE_URLS'] = True
 db = SQLAlchemy(app)
 
 class Kill(db.Model):
     __tablename__ = 'kill'
     id = db.Column(db.Integer, primary_key=True)
     kill_time = db.Column(db.DateTime)
-    involved = db.relationship('Party')
-    victim_id = db.Column(db.Integer, db.ForeignKey('entity.id'))
+    involved = db.relationship('Entity', primaryjoin='Entity.id==Kill.involved_id', uselist=True)
     victim = db.relationship('Entity', primaryjoin='Entity.id==Kill.victim_id')
-    final_blow_id = db.Column(db.Integer, db.ForeignKey('entity.id'))
     final_blow = db.relationship('Entity', primaryjoin='Entity.id==Kill.final_blow_id')
     value = db.Column(db.Float)
+
+    involved_id = db.Column(db.Integer, db.ForeignKey('entity.id'))
+    victim_id = db.Column(db.Integer, db.ForeignKey('entity.id'))
+    final_blow_id = db.Column(db.Integer, db.ForeignKey('entity.id'))
+    url = 'https://zkillboard.com/api{}'
+    kills_slug = '/character/{chars}/{killid}no-items/page/{page}'
+
+    def __init__(self, kill):
+        self.id = kill['killID']
+        self.kill_time = datetime.strptime(kill['killTime'], '%Y-%m-%d %H:%M:%S')
+        self.victim = Entity(kill['victim'])
+        self.final_blow = Entity(list(filter(lambda x: x['finalBlow'], kill['attackers']))[0])
+        self.value = kill['zkb']['totalValue']
+        for inv in kill['attackers']:
+            if inv['characterName'] in app.config['characters']:
+                self.involved.append(Entity(inv))
+
+    
+    def mail(self):
+        data = {'killid': self.id,
+                'value': self.value,
+                'victim': self.victim,
+                'final_blow': self.final_blow,
+                'involved': sorted(self.involved, key=lambda x: x.damage)}
+        return data
+
+    @staticmethod
+    def kills(chars):
+        return Kill.query.filter(Kill.victim.name.name.notin_(chars))
+
+    @staticmethod
+    def losses(chars):
+        return Kill.query.filter(Kill.victim.name.name.in_(chars))
+
+    @staticmethod
+    def friendly(chars):
+        return [x for x in Kill.losses(chars) if any(y in chars for y in x.involved)]
+
+    
+    @staticmethod
+    def board(chars):
+        result = Kill.query.order_by(Kill.id.desc())
+        ks = Kill.kills(chars)
+        ls = Kill.losses(chars)
+        data = {'kills': [k.mail() for k in result],
+                'character_count': len(chars),
+                'losses': ls.count(),
+                'kills': ks.count(),
+                'friendlyfire': Kill.friendlyfire().count(),
+                'isk_killed': sum(x.value for x in ks),
+                'isk_losst': sum(x.value for x in ls),
+                'characters': sorted(chars.items(), key=lambda x: x[0])}
+
+    @staticmethod
+    def makeurl(chars, page):
+        chars, lastkill = ','.join(str(x) for x in chars), ''
+        result = Kill.query.order_by(Kill.id.desc()).first()
+        if result:
+            lastkill = result.id
+
+        slugs = {'chars': chars, 'killid': lastkill, 'page': page}
+
+        return Kill.url.format(Kill.kills_slug.format(**slugs))
+
+    @staticmethod
+    def pull(chars, page=1):
+        kills = []
+        while page:
+            print('pulling page {} ... '.format(page))
+            result = requests.get(Kill.makeurl(chars, page))
+            results = result.json()
+            print('{} results'.format(len(results)))
+
+            if not results:
+                break
+            
+            kills += results
+
+            if len(results) is 200:
+                page += 1
+            else:
+                page = None
+
+        if kills:
+            for k in kills:
+                db.session.add(Kill(k))
+            db.session.commit()
+
 
 
 class Entity(db.Model):
     __tablename__ = 'entity'
     id = db.Column(db.Integer, primary_key=True)
     kill_id = db.Column(db.Integer, db.ForeignKey('kill.id'))
-    entity_id = db.Column(db.Integer, db.ForeignKey('party.id'))
-    name = db.relationship('Party', primaryjoin='Party.id==Entity.entity_id' )
+    name_id = db.Column(db.Integer, db.ForeignKey('party.id'))
+    name = db.relationship('Party', primaryjoin='Party.id==Entity.name_id' )
     corp_id = db.Column(db.Integer, db.ForeignKey('party.id'))
-    corp_name = db.relationship('Party', primaryjoin='Party.id==Entity.corp_id')
+    corp = db.relationship('Party', primaryjoin='Party.id==Entity.corp_id')
+    alliance_id = db.Column(db.Integer, db.ForeignKey('party.id'))
+    alliance = db.relationship('Party', primaryjoin='Party.id==Entity.alliance_id')
     ship_id = db.Column(db.Integer, db.ForeignKey('party.id'))
     ship = db.relationship('Party', primaryjoin='Party.id==Entity.ship_id')
     damage = db.Column(db.Integer)
+
+    def __init__(self, entity):
+        self.name = Party(entity['characterID'], entity['characterName'])
+        self.corp = Party(entity['corporationID'], entity['corporationName'])
+        if entity['allianceID']:
+            self.alliance = Party(entity['allianceID'], entity['allianceName'])
+        self.ship = Party(entity['shipTypeID'], "LOLNAMEIDONTHAVEITYET")
+        if 'damageTaken' in entity:
+            self.damage = entity['damageTaken']
+        else:
+            self.damage = entity['damageDone']
 
 class Party(db.Model):
     __tablename__ = 'party'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120))
-    kill_id = db.Column(db.Integer, db.ForeignKey('kill.id'))
 
-
+    def __init__(self, id, name):
+        q = self.query.get(id)
+        if not q:
+            self.id = id
+            self.name = name
+            db.session.add(self)
+            db.session.commit()
+        else:
+            self = q
+    
 class zKillAPI():
     def __init__(self):
         self.character_list = {}
