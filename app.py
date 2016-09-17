@@ -8,12 +8,46 @@ from collections import defaultdict
 
 from flask import Flask, render_template
 from flask_frozen import Freezer
+from flask_sqlalchemy import SQLAlchemy
 
 
 app = Flask(__name__)
 freezer = Freezer(app)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///kills.db'
 app.config['FREEZER_DESTINATION'] = 'out/build'
 app.config['FREEZER_RELATIVE_URLS'] = True
+db = SQLAlchemy(app)
+
+class Kill(db.Model):
+    __tablename__ = 'kill'
+    id = db.Column(db.Integer, primary_key=True)
+    kill_time = db.Column(db.DateTime)
+    involved = db.relationship('Party')
+    victim_id = db.Column(db.Integer, db.ForeignKey('entity.id'))
+    victim = db.relationship('Entity', primaryjoin='Entity.id==Kill.victim_id')
+    final_blow_id = db.Column(db.Integer, db.ForeignKey('entity.id'))
+    final_blow = db.relationship('Entity', primaryjoin='Entity.id==Kill.final_blow_id')
+    value = db.Column(db.Float)
+
+
+class Entity(db.Model):
+    __tablename__ = 'entity'
+    id = db.Column(db.Integer, primary_key=True)
+    kill_id = db.Column(db.Integer, db.ForeignKey('kill.id'))
+    entity_id = db.Column(db.Integer, db.ForeignKey('party.id'))
+    name = db.relationship('Party', primaryjoin='Party.id==Entity.entity_id' )
+    corp_id = db.Column(db.Integer, db.ForeignKey('party.id'))
+    corp_name = db.relationship('Party', primaryjoin='Party.id==Entity.corp_id')
+    ship_id = db.Column(db.Integer, db.ForeignKey('party.id'))
+    ship = db.relationship('Party', primaryjoin='Party.id==Entity.ship_id')
+    damage = db.Column(db.Integer)
+
+class Party(db.Model):
+    __tablename__ = 'party'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120))
+    kill_id = db.Column(db.Integer, db.ForeignKey('kill.id'))
+
 
 class zKillAPI():
     def __init__(self):
