@@ -38,7 +38,7 @@
           </th>
         </tr>
         {% for killmail in killmails %}
-        <tr class="{{killmail.mail_type}}">
+        <tr class="row-{{killmail.mail_type}}">
           <td class="time-price">
             {{killmail.kill_time.strftime('%H:%M')}}<br>
             <a href="https://zkillboard.com/kill/{{killmail.killid}}/">{{killmail['formatted_price']}}</a>

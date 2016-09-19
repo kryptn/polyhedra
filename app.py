@@ -46,15 +46,13 @@ class Kill(db.Model):
         self.id = kill['killID']
         self.kill_time = datetime.strptime(kill['killTime'], '%Y-%m-%d %H:%M:%S')
         self.victim = Entity(kill['victim'])
-        self.system = Party(kill['solarSystemID'], '')
+        self.system = Party.make_or_create(kill['solarSystemID'], '')
         self.final_blow = Entity(list(filter(lambda x: x['finalBlow'], kill['attackers']))[0])
         self.value = kill['zkb']['totalValue']
         self.others = len(kill['attackers'])
         for inv in kill['attackers']:
             if inv['characterName'] in app.config['characters']:
                 self.involved.append(Entity(inv))
-
-        
 
         if self.victim.character.name in app.config['characters']:
             self.loss = True
@@ -64,6 +62,7 @@ class Kill(db.Model):
     def mail(self):
         data = {'killid': self.id,
                 'value': self.value,
+                'others': self.others,
                 'victim': self.victim,
                 'system': self.system,
                 'kill_time': self.kill_time,
@@ -170,11 +169,11 @@ class Entity(db.Model):
     ship_id = db.Column(db.Integer, db.ForeignKey('party.id'))
     
     def __init__(self, entity):
-        self.character = Party(entity['characterID'], entity['characterName'])
-        self.corp = Party(entity['corporationID'], entity['corporationName'])
+        self.character = Party.make_or_create(entity['characterID'], entity['characterName'])
+        self.corp = Party.make_or_create(entity['corporationID'], entity['corporationName'])
         if entity['allianceID']:
-            self.alliance = Party(entity['allianceID'], entity['allianceName'])
-        self.ship = Party(entity['shipTypeID'], '')
+            self.alliance = Party.make_or_create(entity['allianceID'], entity['allianceName'])
+        self.ship = Party.make_or_create(entity['shipTypeID'], '')
         if 'damageTaken' in entity:
             self.damage = entity['damageTaken']
         else:
@@ -186,17 +185,18 @@ class Party(db.Model):
     name = db.Column(db.String(120))
 
     def __init__(self, id, name):
-        q = self.query.get(id)
-        if not q:
-            self.id = id
-            self.name = name
-            db.session.add(self)
-            db.session.commit()
-        else:
-            self = q
+        self.id = id
+        self.name = name
 
-    def __repr__(self):
-        return self.name
+    @staticmethod
+    def make_or_create(id, name):
+        q = Party.query.get(id)
+        if not q:
+            q = Party(id, name)
+            db.session.add(q)
+            db.session.commit()
+
+        return q
 
     @staticmethod
     def unnamed_systems():
