@@ -24,7 +24,7 @@ class Kill(db.Model):
     __tablename__ = 'kill'
     id = db.Column(db.Integer, primary_key=True)
     kill_time = db.Column(db.DateTime)
-    involved = db.relationship('Entity', primaryjoin='Entity.id==Kill.involved_id', uselist=True)
+    involved = db.relationship('Entity', foreign_keys='Entity.kill_id')
     victim = db.relationship('Entity', primaryjoin='Entity.id==Kill.victim_id')
     final_blow = db.relationship('Entity', primaryjoin='Entity.id==Kill.final_blow_id')
     system = db.relationship('Label', primaryjoin='Label.id==Kill.system_id')
@@ -36,7 +36,6 @@ class Kill(db.Model):
     
     victim_id = db.Column(db.Integer, db.ForeignKey('entity.id'))
     system_id = db.Column(db.Integer, db.ForeignKey('label.id'))
-    involved_id = db.Column(db.Integer, db.ForeignKey('entity.id'))
     final_blow_id = db.Column(db.Integer, db.ForeignKey('entity.id'))
     
     url = 'https://zkillboard.com/api{}'

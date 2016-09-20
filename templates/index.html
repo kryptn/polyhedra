@@ -65,7 +65,7 @@
               <small><a href="https://zkillboard.com/alliance/{{killmail.final_blow.alliance.name}}/">{{killmail.final_blow.alliance.name}}</a></small>
             </span>
           </td>
-          <td><small>{% for pilot in killmail.involved %} <span>{{pilot.character.name}}</span> {% endfor %}
+          <td><small>{% for pilot in killmail.involved %} <span style="display:block">{{pilot.character.name}}</span> {% endfor %}
         </tr>
         {% endfor %}
         {% endfor %}
