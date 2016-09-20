@@ -41,7 +41,7 @@
         <tr class="row-{{killmail.mail_type}}">
           <td class="time-price">
             {{killmail.kill_time.strftime('%H:%M')}}<br>
-            <a href="https://zkillboard.com/kill/{{killmail.killid}}/">{{killmail['formatted_price']}}</a>
+            <a href="https://zkillboard.com/kill/{{killmail.killid}}/">{{killmail.value|humanize}}</a>
           </td>
           <td style="center">
             <a href="https://zkillboard.com/kill/{{killmail.killid}}/"><img src="https://imageserver.eveonline.com/Type/{{killmail.victim.ship.id}}_64.png"
@@ -96,11 +96,11 @@
         </tr>
         <tr>
           <th>Total ISK Killed</th>
-          <td>{{isk_killed}}</td>
+          <td>{{isk_killed|humanize}}</td>
         </tr>
         <tr>
           <th>Total ISK Lost</th>
-          <td>{{isk_lost}}</td>
+          <td>{{isk_lost|humanize}}</td>
         </tr>
         </tbody>
       </table>

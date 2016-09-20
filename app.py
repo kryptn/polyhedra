@@ -20,6 +20,27 @@ with open('config.yml') as fd:
 freezer = Freezer(app)
 db = SQLAlchemy(app)
 
+@app.template_filter()
+def humanize(n):
+    # modified from https://github.com/jmoiron/humanize
+    powers = [10 ** x for x in (3, 6, 9, 12, 15, 18)]
+    words = ('k', 'm', 'b', 't', 'qa', 'qi')
+
+    try:
+        n = float(n)
+        n = int(n)
+    except(ValueError, TypeError):
+        return str(n)
+
+    if n < powers[0]:
+        return str(n)
+
+    for ordinal, power in enumerate(powers[1:], 1):
+        if n < power:
+            chopped = n / float(powers[ordinal - 1])
+            return '{:.1f}{}'.format(chopped, words[ordinal - 1])
+    return str(n)
+
 class Kill(db.Model):
     __tablename__ = 'kill'
     id = db.Column(db.Integer, primary_key=True)
@@ -62,8 +83,8 @@ class Kill(db.Model):
         data = {'killid': self.id,
                 'value': self.value,
                 'others': self.others,
-                'victim': self.victim,
                 'system': self.system,
+                'victim': self.victim,
                 'kill_time': self.kill_time,
                 'mail_type': self.mail_type(),
                 'final_blow': self.final_blow,
@@ -170,19 +191,31 @@ class Entity(db.Model):
     alliance_id = db.Column(db.Integer, db.ForeignKey('label.id'))
     ship_id = db.Column(db.Integer, db.ForeignKey('label.id'))
     
-    def __init__(self, entity):
-        self.character = Label.make_or_create(entity['characterID'], entity['characterName'])
+    def __init__(self, entity): 
         self.corp = Label.make_or_create(entity['corporationID'], entity['corporationName'])
+        if entity['characterName']:
+            self.character = Label.make_or_create(entity['characterID'], entity['characterName'])
+        else:
+            self.character = self.corp
+
         if entity['allianceID']:
             self.alliance = Label.make_or_create(entity['allianceID'], entity['allianceName'])
+        else:
+            self.alliance = self.corp
+
         self.ship = Label.make_or_create(entity['shipTypeID'], '')
+
         if 'damageTaken' in entity:
             self.damage = entity['damageTaken']
         else:
             self.damage = entity['damageDone']
 
+
+        
+
     def __repr__(self):
         return '<Entity: {}>'.format(self.character.name)
+
 
 class Label(db.Model):
     __tablename__ = 'label'
