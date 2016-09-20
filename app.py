@@ -111,19 +111,21 @@ class Kill(db.Model):
     @staticmethod
     def friendly():
         return Kill.query.filter(db.and_(Kill.loss == True, Kill.kill == True))
+
+    @staticmethod
+    def kills_by_day():
+        by_day = defaultdict(list)
+        kills = Kill.query.order_by(Kill.id.desc())
+        for k in [kill.mail() for kill in kills]:
+            by_day[k['kill_time'].date()].append(k)
+        return sorted(by_day.items(), reverse=True)
+
     
     @staticmethod
     def board(chars):
-        result = Kill.query.order_by(Kill.id.desc())
-        klist = [k.mail() for k in result]
-        dlist = defaultdict(list)
-        for k in klist:
-            dlist[k['kill_time'].strftime('%Y-%m-%d')].append(k)
-
-
         ks = Kill.kills()
         ls = Kill.losses()
-        data = {'list': sorted(dlist.items(), key=lambda x: x[0], reverse=True),
+        data = {'list': Kill.kills_by_day(),
                 'character_count': len(chars),
                 'losses': ls.count(),
                 'kills': ks.count(),

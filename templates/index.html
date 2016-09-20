@@ -34,7 +34,7 @@
         {% for day, killmails in list %}
         <tr class="kb-table-row-date">
           <th colspan="8" class="row-month">
-              <time dateformat="{{day}}">{{day}}</time>
+              <time datetime="{{day}}">{{day.strftime("%B %m, %Y")}}</time>
           </th>
         </tr>
         {% for killmail in killmails %}
