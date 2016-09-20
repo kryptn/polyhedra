@@ -27,7 +27,7 @@ class Kill(db.Model):
     involved = db.relationship('Entity', primaryjoin='Entity.id==Kill.involved_id', uselist=True)
     victim = db.relationship('Entity', primaryjoin='Entity.id==Kill.victim_id')
     final_blow = db.relationship('Entity', primaryjoin='Entity.id==Kill.final_blow_id')
-    system = db.relationship('Party', primaryjoin='Party.id==Kill.system_id')
+    system = db.relationship('Label', primaryjoin='Label.id==Kill.system_id')
     others = db.Column(db.Integer)
     value = db.Column(db.Float)
     kill = db.Column(db.Boolean, default=True)
@@ -35,7 +35,7 @@ class Kill(db.Model):
 
     
     victim_id = db.Column(db.Integer, db.ForeignKey('entity.id'))
-    system_id = db.Column(db.Integer, db.ForeignKey('party.id'))
+    system_id = db.Column(db.Integer, db.ForeignKey('label.id'))
     involved_id = db.Column(db.Integer, db.ForeignKey('entity.id'))
     final_blow_id = db.Column(db.Integer, db.ForeignKey('entity.id'))
     
@@ -46,7 +46,7 @@ class Kill(db.Model):
         self.id = kill['killID']
         self.kill_time = datetime.strptime(kill['killTime'], '%Y-%m-%d %H:%M:%S')
         self.victim = Entity(kill['victim'])
-        self.system = Party.make_or_create(kill['solarSystemID'], '')
+        self.system = Label.make_or_create(kill['solarSystemID'], '')
         self.final_blow = Entity(list(filter(lambda x: x['finalBlow'], kill['attackers']))[0])
         self.value = kill['zkb']['totalValue']
         self.others = len(kill['attackers'])
@@ -148,39 +148,45 @@ class Kill(db.Model):
                 db.session.add(Kill(k))
             db.session.commit()
         
-            Party.populate()
+            Label.populate()
+
+    def __repr__(self):
+        return '<Kill {}: {}>'.format(self.id, self.victim.character.name)
 
 
 class Entity(db.Model):
     __tablename__ = 'entity'
     id = db.Column(db.Integer, primary_key=True)
     kill_id = db.Column(db.Integer, db.ForeignKey('kill.id'))
-    character = db.relationship('Party', primaryjoin='Party.id==Entity.character_id' )
-    corp = db.relationship('Party', primaryjoin='Party.id==Entity.corp_id')
-    alliance = db.relationship('Party', primaryjoin='Party.id==Entity.alliance_id')
-    ship = db.relationship('Party', primaryjoin='Party.id==Entity.ship_id')
+    character = db.relationship('Label', primaryjoin='Label.id==Entity.character_id' )
+    corp = db.relationship('Label', primaryjoin='Label.id==Entity.corp_id')
+    alliance = db.relationship('Label', primaryjoin='Label.id==Entity.alliance_id')
+    ship = db.relationship('Label', primaryjoin='Label.id==Entity.ship_id')
     damage = db.Column(db.Integer)
 
 
 
-    character_id = db.Column(db.Integer, db.ForeignKey('party.id'))
-    corp_id = db.Column(db.Integer, db.ForeignKey('party.id'))
-    alliance_id = db.Column(db.Integer, db.ForeignKey('party.id'))
-    ship_id = db.Column(db.Integer, db.ForeignKey('party.id'))
+    character_id = db.Column(db.Integer, db.ForeignKey('label.id'))
+    corp_id = db.Column(db.Integer, db.ForeignKey('label.id'))
+    alliance_id = db.Column(db.Integer, db.ForeignKey('label.id'))
+    ship_id = db.Column(db.Integer, db.ForeignKey('label.id'))
     
     def __init__(self, entity):
-        self.character = Party.make_or_create(entity['characterID'], entity['characterName'])
-        self.corp = Party.make_or_create(entity['corporationID'], entity['corporationName'])
+        self.character = Label.make_or_create(entity['characterID'], entity['characterName'])
+        self.corp = Label.make_or_create(entity['corporationID'], entity['corporationName'])
         if entity['allianceID']:
-            self.alliance = Party.make_or_create(entity['allianceID'], entity['allianceName'])
-        self.ship = Party.make_or_create(entity['shipTypeID'], '')
+            self.alliance = Label.make_or_create(entity['allianceID'], entity['allianceName'])
+        self.ship = Label.make_or_create(entity['shipTypeID'], '')
         if 'damageTaken' in entity:
             self.damage = entity['damageTaken']
         else:
             self.damage = entity['damageDone']
 
-class Party(db.Model):
-    __tablename__ = 'party'
+    def __repr__(self):
+        return '<Entity: {}>'.format(self.character.name)
+
+class Label(db.Model):
+    __tablename__ = 'label'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120))
 
@@ -190,9 +196,9 @@ class Party(db.Model):
 
     @staticmethod
     def make_or_create(id, name):
-        q = Party.query.get(id)
+        q = Label.query.get(id)
         if not q:
-            q = Party(id, name)
+            q = Label(id, name)
             db.session.add(q)
             db.session.commit()
 
@@ -200,26 +206,29 @@ class Party(db.Model):
 
     @staticmethod
     def unnamed_systems():
-        return Party.query.filter(Party.id >= 30000000).filter(Party.name == '')
+        return Label.query.filter(Label.id >= 30000000).filter(Label.name == '')
 
     @staticmethod
     def unnamed_types():
-        return Party.query.filter(Party.id < 30000000).filter(Party.name == '')
+        return Label.query.filter(Label.id < 30000000).filter(Label.name == '')
 
     @staticmethod
     def populate():
-        systems = Party.unnamed_systems()
+        systems = Label.unnamed_systems()
         for system in systems:
             r = requests.get('https://crest-tq.eveonline.com/solarsystems/{}/'.format(system.id))
             system.name = r.json()['name']
 
-        types = Party.unnamed_types()
+        types = Label.unnamed_types()
         with open('typeids.json') as fd:
             sdd = json.load(fd)
         for t in types:
             t.name = sdd[str(t.id)]
 
         db.session.commit()
+
+    def __repr__(self):
+        return '<Label: {}>'.format(self.name)
 
     
 class zKillAPI():

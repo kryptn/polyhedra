@@ -1,4 +1,4 @@
-from app import app, db, Kill, Party, Entity
+from app import app, db, Kill, Label, Entity
 import json, requests
 
 def get_test_data():
