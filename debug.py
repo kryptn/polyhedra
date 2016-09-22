@@ -1,4 +1,4 @@
-from app import app, db, Kill, Label, Entity
+from app import app, db, User, Kill, Label, Entity
 import json, requests
 
 def get_test_data():
@@ -9,7 +9,8 @@ def get_test_data():
 with open('test_data.json') as fd:
     data = json.load(fd)
 
-c = app.config['characters'].values()
+chrs = app.config['users']['Polyhedra']
+c = chrs.values()
 
 def reset():
     db.create_all()
