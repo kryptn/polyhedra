@@ -54,8 +54,78 @@ label_association = db.Table('association', db.metadata,
 class User(db.Model):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
-    kills = db.relationship("Kill", secondary=kill_association)
+    name = db.Column(db.String(64))
+    kills = db.relationship("Kill", secondary=kill_association, backref='user')
     characters = db.relationship("Label", secondary=label_association)
+
+    @property
+    def character_ids(self):
+        return [x.id for x in self.characters]
+
+    @property
+    def character_dict(self):
+        return {x.name: x.id for x in self.characters}
+
+    def pull(self, dump_static=False, load_static=False):
+        characters = {label.name: label.id for label in self.characters}
+        kills = []
+        page = 1
+        
+        if load_static:
+            print('Loading from static {}.json'.format(self.name))
+            with open('{}.json'.format(self.name)) as fd:
+                kills = json.load(fd)
+            page = None
+
+        while page:
+            print('Pulling {} page {} ... '.format(self.name, page))
+            results = requests.get(Kill.makeurl(characters, page)).json()
+            print('\t{} kills'.format(len(results)))
+
+            if not results:
+                break
+
+            kills += results
+            if len(results) is 200:
+                page += 1
+            else:
+                page = None
+
+        if dump_static:
+            print('Dumping into {}.json'.format(self.name))
+            with open('{}.json'.format(self.name), 'w') as fd:
+                json.dump(kills, fd)
+
+        ks = [Kill(k, self) for k in kills]
+        db.session.add_all(ks)
+        db.session.commit()
+        self.kills += ks
+        db.session.add(self)
+        db.session.commit()
+
+    @staticmethod
+    def killboard(user=None, characterid=None):
+        if characterid:
+            if not user:
+                r = User.query.all()
+                user = None or next(filter(lambda x: characterid in x.character_ids, r))
+            
+            return Kill.board(user.character_dict, characterid)
+
+        if user:
+            r = User.query.filter_by(name = user).first()
+        else:
+            r = User.query.first()
+
+        return Kill.board(r.character_dict)
+
+
+    @staticmethod
+    def load(config):
+        for user, characters in config['users'].items():
+            labels = [Label.get_or_create(value, key) for key, value in characters.items()]
+            db.session.add(User(name=user, characters=labels))
+                                
 
 class Kill(db.Model):
     __tablename__ = 'kill'
@@ -69,7 +139,6 @@ class Kill(db.Model):
     value = db.Column(db.Float)
     kill = db.Column(db.Boolean, default=True)
     loss = db.Column(db.Boolean, default=False)
-
     
     victim_id = db.Column(db.Integer, db.ForeignKey('entity.id'))
     system_id = db.Column(db.Integer, db.ForeignKey('label.id'))
@@ -78,22 +147,27 @@ class Kill(db.Model):
     url = 'https://zkillboard.com/api{}'
     kills_slug = '/character/{chars}/{killid}no-items/page/{page}'
 
-    def __init__(self, kill):
+    def __init__(self, kill, user):
         self.id = kill['killID']
         self.kill_time = datetime.strptime(kill['killTime'], '%Y-%m-%d %H:%M:%S')
         self.victim = Entity(kill['victim'])
         self.system = Label.get_or_create(kill['solarSystemID'], '')
-        self.final_blow = Entity(list(filter(lambda x: x['finalBlow'], kill['attackers']))[0])
         self.value = kill['zkb']['totalValue']
         self.others = len(kill['attackers'])
+        
+        #self.user = user
+
         for inv in kill['attackers']:
-            if inv['characterName'] in app.config['characters']:
+            if inv['finalBlow']:
+                self.final_blow = Entity(inv)
+            if inv['characterID'] in user.character_ids:
                 self.involved.append(Entity(inv))
 
-        if self.victim.character.name in app.config['characters']:
+        if self.victim.character.name in user.character_ids:
             self.loss = True
         if not self.involved:
             self.kill = False
+
     
     def mail(self):
         data = {'killid': self.id,
@@ -148,7 +222,7 @@ class Kill(db.Model):
 
     @staticmethod
     def makeurl(chars, page):
-        chars, lastkill = ','.join(str(x) for x in chars), ''
+        chars, lastkill = ','.join(str(x) for x in chars.values()), ''
         result = Kill.query.order_by(Kill.id.desc()).first()
         if result:
             lastkill = result.id
@@ -158,7 +232,7 @@ class Kill(db.Model):
         return Kill.url.format(Kill.kills_slug.format(**slugs))
 
     @staticmethod
-    def pull(chars, page=1):
+    def pull(chars, user=None, page=1):
         kills = []
         while page:
             print('pulling page {} ... '.format(page))
@@ -178,7 +252,7 @@ class Kill(db.Model):
 
         if kills:
             for k in kills:
-                db.session.add(Kill(k))
+                db.session.add(Kill(k, user=user))
             db.session.commit()
         
             Label.populate()
@@ -261,6 +335,21 @@ class Label(db.Model):
         return Label.query.filter(Label.id < 30000000).filter(Label.name == '')
 
     @staticmethod
+    def save_to_local(filename='label.json'):
+        labels = [{'id':x.id, 'name':x.name} for x in Label.query.all()]
+        with open(filename, 'w') as fd:
+            json.dump(labels, fd)
+
+    @staticmethod
+    def load_from_local(filename='label.json'):
+        with open(filename) as fd:
+            labels = json.load(fd)
+
+        for label in labels:
+            Label.get_or_create(**label)
+        
+
+    @staticmethod
     def populate():
         systems = Label.unnamed_systems()
         for system in systems:
@@ -279,10 +368,11 @@ class Label(db.Model):
         return '<Label: {}>'.format(self.name)
 
 
-@app.route('/', defaults={'charid': None})
-@app.route('/<int:charid>/')
-def index(charid):
-    killboard = Kill.board(app.config['characters'], charid)
+@app.route('/', defaults={'user': None, 'charid': None})
+@app.route('/<string:user>/', defaults={'user': None, 'charid': None})
+@app.route('/<int:charid>/', defaults={'user': None})
+def index(user, charid):
+    killboard = User.killboard(user, charid)
     return render_template('index.html', **killboard)
 
 @freezer.register_generator

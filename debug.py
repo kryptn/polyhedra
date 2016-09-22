@@ -14,6 +14,7 @@ c = chrs.values()
 
 def reset():
     db.create_all()
-    for x in data:
-        db.session.add(Kill(x))
+    User.load(app.config)
+    Label.load_from_local()
+
 
