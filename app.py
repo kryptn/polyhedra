@@ -105,19 +105,18 @@ class User(db.Model):
 
     @staticmethod
     def killboard(user=None, characterid=None):
-        if characterid:
-            if not user:
-                r = User.query.all()
-                user = None or next(filter(lambda x: characterid in x.character_ids, r))
-            
-            return Kill.board(user.character_dict, characterid)
-
         if user:
-            r = User.query.filter_by(name = user).first()
-        else:
-            r = User.query.first()
+            user = User.query.filter(User.name == user).first()
 
-        return Kill.board(r.character_dict)
+        if not user and characterid:
+            r = User.query.all()
+            user = None or next(filter(lambda x: characterid in x.character_ids, r))
+
+        if not user:
+            user = User.query.first()
+
+
+        return Kill.board(user.character_dict, characterid)
 
 
     @staticmethod
@@ -163,7 +162,7 @@ class Kill(db.Model):
             if inv['characterID'] in user.character_ids:
                 self.involved.append(Entity(inv))
 
-        if self.victim.character.name in user.character_ids:
+        if self.victim.character.id in user.character_ids:
             self.loss = True
         if not self.involved:
             self.kill = False
@@ -368,12 +367,19 @@ class Label(db.Model):
         return '<Label: {}>'.format(self.name)
 
 
+def index():
+    killboard = User.killboard(user=None)
+    return render_template('index.html', **killboard)
+
 @app.route('/', defaults={'user': None, 'charid': None})
-@app.route('/<string:user>/', defaults={'user': None, 'charid': None})
-@app.route('/<int:charid>/', defaults={'user': None})
-def index(user, charid):
+@app.route('/<string:user>/', defaults={'charid': None})
+@app.route('/<string:user>/<int:charid>/')
+def user(user, charid):
     killboard = User.killboard(user, charid)
     return render_template('index.html', **killboard)
+
+
+
 
 @freezer.register_generator
 def index():
