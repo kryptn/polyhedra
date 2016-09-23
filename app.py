@@ -38,7 +38,10 @@ def humanize(n):
     for ordinal, power in enumerate(powers[1:], 1):
         if n < power:
             chopped = n / float(powers[ordinal - 1])
-            return '{:.1f}{}'.format(chopped, words[ordinal - 1])
+            template = '{:.1f}{}'
+            if chopped >= 100:
+                template = '{:.0f}{}'
+            return template.format(chopped, words[ordinal - 1])
     return str(n)
 
 
