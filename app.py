@@ -99,12 +99,15 @@ class User(db.Model):
             with open('{}.json'.format(self.name), 'w') as fd:
                 json.dump(kills, fd)
 
-        ks = [Kill(k, self) for k in kills]
+        ks = [Kill.get_or_create(k, self) for k in kills]
         db.session.add_all(ks)
         db.session.commit()
         self.kills += ks
         db.session.add(self)
         db.session.commit()
+
+    def __repr__(self):
+        return '<User: {}>'.format(self.name)
 
     @staticmethod
     def killboard(user=None, characterid=None):
@@ -121,6 +124,11 @@ class User(db.Model):
 
         return Kill.board(user.character_dict, characterid)
 
+    @staticmethod
+    def pull_all():
+        users = User.query.all()
+        for u in users:
+            u.pull()
 
     @staticmethod
     def load(config):
@@ -169,6 +177,7 @@ class Kill(db.Model):
             self.loss = True
         if not self.involved:
             self.kill = False
+
 
     
     def mail(self):
@@ -258,6 +267,16 @@ class Kill(db.Model):
             db.session.commit()
         
             Label.populate()
+
+
+    @staticmethod
+    def get_or_create(kill, user):
+        result = Kill.query.get(kill['killID'])
+        if result:
+            return result
+        else:
+            k = Kill(kill, user)
+            return k
 
     def __repr__(self):
         return '<Kill {}: {}>'.format(self.id, self.victim.character.name)
